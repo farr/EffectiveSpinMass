@@ -1,0 +1,17 @@
+name: chieffregression
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - arviz
+  - astropy
+  - corner
+  - h5py
+  - jupyterlab
+  - lalsuite
+  - matplotlib
+  - pandas
+  - pystan
+  - python=3.7
+  - scipy
+  - seaborn
