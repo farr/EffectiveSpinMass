@@ -6,6 +6,7 @@ dependencies:
   - arviz
   - astropy
   - corner
+  - emcee
   - h5py
   - ipywidgets
   - jupyterlab
