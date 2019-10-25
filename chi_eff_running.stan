@@ -10,6 +10,7 @@ data {
   int Nobs;
   int Nsamp;
   real chi_eff[Nobs, Nsamp];
+  real chi_eff_bw[Nobs];
   real m1[Nobs, Nsamp];
 
   int Ndraw;
@@ -69,7 +70,7 @@ model {
     for (j in 1:Nsamp) {
       real mu = linr(m1[i,j], mlow, mu_low, mhigh, mu_high);
       real sigma = exp(linr(m1[i,j], mlow, log(sigma_low), mhigh, log(sigma_high)));
-      lp[j] = normal_lpdf(chi_eff[i,j] | mu, sigma) - log(normal_cdf(1, mu, sigma) - normal_cdf(-1, mu, sigma));
+      lp[j] = normal_lpdf(chi_eff[i,j] | mu, sqrt(sigma*sigma + chi_eff_bw[i]*chi_eff_bw[i])) - log(normal_cdf(1, mu, sigma) - normal_cdf(-1, mu, sigma));
     }
     target += log_sum_exp(lp) - log(Nsamp);
   }
