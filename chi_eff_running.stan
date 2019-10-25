@@ -70,7 +70,16 @@ model {
     for (j in 1:Nsamp) {
       real mu = linr(m1[i,j], mlow, mu_low, mhigh, mu_high);
       real sigma = exp(linr(m1[i,j], mlow, log(sigma_low), mhigh, log(sigma_high)));
-      lp[j] = normal_lpdf(chi_eff[i,j] | mu, sqrt(sigma*sigma + chi_eff_bw[i]*chi_eff_bw[i])) - log(normal_cdf(1, mu, sigma) - normal_cdf(-1, mu, sigma));
+
+      real x1 = ((1 + mu)*chi_eff_bw[i]*chi_eff_bw[i] + sigma*sigma*(1+chi_eff[i,j]))/(chi_eff_bw[i]*sigma*sqrt(2*(chi_eff_bw[i]*chi_eff_bw[i] + sigma*sigma)));
+      real x2 = ((1 - mu)*chi_eff_bw[i]*chi_eff_bw[i] + sigma*sigma*(1-chi_eff[i,j]))/(chi_eff_bw[i]*sigma*sqrt(2*(chi_eff_bw[i]*chi_eff_bw[i] + sigma*sigma)));
+
+      real log_norm = log((erf(x1) + erf(x2))/2.0);
+
+      /* This integrates the PDFs for the likelihood (approximated by a Gaussian
+         KDE with bandwidth `bw`) against the population (also
+         a---truncated---Gaussian) between chi_eff_true = -1 to 1.  */
+      lp[j] = log_norm + normal_lpdf(chi_eff[i,j] | mu, sqrt(sigma*sigma + chi_eff_bw[i]*chi_eff_bw[i])) - log(normal_cdf(1, mu, sigma) - normal_cdf(-1, mu, sigma));
     }
     target += log_sum_exp(lp) - log(Nsamp);
   }
