@@ -17,25 +17,24 @@ data {
   real chi_eff_sel[Nsel];
   real m1_sel[Nsel];
   real log_sel_wt[Nsel];
-}
 
-transformed data {
-  real mlow = 10.0;
-  real mhigh = 50.0;
+  real mlow;
+  real mhigh;
+  real sigma_min;
 }
 
 parameters {
-  real<lower=-1,upper=1> mu_10;
-  real<lower=0.01, upper=2> sigma_10;
-  real<lower=-1,upper=1> mu_50;
-  real<lower=0.01, upper=2> sigma_50;
+  real<lower=-1,upper=1> mu_low;
+  real<lower=sigma_min, upper=2> sigma_low;
+  real<lower=-1,upper=1> mu_high;
+  real<lower=sigma_min, upper=2> sigma_high;
 }
 
 transformed parameters {
-  real mu0 = linr(30.0, mlow, mu_10, mhigh, mu_50);
-  real sigma0 = exp(linr(30.0, mlow, log(sigma_10), mhigh, log(sigma_50)));
-  real alpha = (mu_50-mu_10)*30.0/(mhigh-mlow);
-  real beta = (log(sigma_50) - log(sigma_10))*30.0/(mhigh-mlow);
+  real mu0 = linr(30.0, mlow, mu_low, mhigh, mu_high);
+  real sigma0 = exp(linr(30.0, mlow, log(sigma_low), mhigh, log(sigma_high)));
+  real alpha = (mu_high-mu_low)*30.0/(mhigh-mlow);
+  real beta = (log(sigma_high) - log(sigma_low))*30.0/(mhigh-mlow);
 
   real neff_det;
   real log_mu;
@@ -46,8 +45,8 @@ transformed parameters {
     real log_s2;
 
     for (i in 1:Nsel) {
-      real mu = linr(m1_sel[i], mlow, mu_10, mhigh, mu_50);
-      real sigma = exp(linr(m1_sel[i], mlow, log(sigma_10), mhigh, log(sigma_50)));
+      real mu = linr(m1_sel[i], mlow, mu_low, mhigh, mu_high);
+      real sigma = exp(linr(m1_sel[i], mlow, log(sigma_low), mhigh, log(sigma_high)));
 
       log_pdet[i] = normal_lpdf(chi_eff_sel[i] | mu, sigma) - log(normal_cdf(1.0, mu, sigma) - normal_cdf(-1.0, mu, sigma));
       log_pdet2[i] = 2.0*log_pdet[i];
@@ -68,8 +67,8 @@ model {
   for (i in 1:Nobs) {
     real lp[Nsamp];
     for (j in 1:Nsamp) {
-      real mu = linr(m1[i,j], mlow, mu_10, mhigh, mu_50);
-      real sigma = exp(linr(m1[i,j], mlow, log(sigma_10), mhigh, log(sigma_50)));
+      real mu = linr(m1[i,j], mlow, mu_low, mhigh, mu_high);
+      real sigma = exp(linr(m1[i,j], mlow, log(sigma_low), mhigh, log(sigma_high)));
       lp[j] = normal_lpdf(chi_eff[i,j] | mu, sigma) - log(normal_cdf(1, mu, sigma) - normal_cdf(-1, mu, sigma));
     }
     target += log_sum_exp(lp) - log(Nsamp);
